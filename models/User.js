@@ -1,31 +1,33 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    minlength: 6,
-    maxlength: 32,
-    required: true
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      minlength: 6,
+      maxlength: 32,
+      required: true
+    },
+    email: {
+      type: String,
+      minlength: 6,
+      maxlength: 32,
+      required: true,
+      unique: true
+    },
+    password: {
+      type: String,
+      minlength: 6,
+      maxlength: 32,
+      required: true
+    },
+    status: {
+      type: String
+    }
   },
-  email: {
-    type: String,
-    minlength: 6,
-    maxlength: 32,
-    required: true,
-    unique: true
-  },
-  password: {
-    type: String,
-    minlength: 6,
-    maxlength: 32,
-    required: true
-  },
-  lastOnline: {
-    type: Date,
-    required: true
-  }
-});
+  { timestamps: true }
+);
 
 //Middleware pre save crypt password before save
 userSchema.pre("save", async function(next) {
@@ -64,6 +66,12 @@ userSchema.methods.toJSON = function() {
 
   return userObj;
 };
+
+userSchema.virtual("rooms", {
+  ref: "Room",
+  localField: "_id",
+  foreignField: "users"
+});
 
 const User = mongoose.model("User", userSchema);
 
