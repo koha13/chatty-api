@@ -7,7 +7,14 @@ const Room = require("../models/Room");
 router.get("/", verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
-    await user.populate("rooms").execPopulate();
+    await user
+      .populate({
+        path: "rooms",
+        populate: {
+          path: "users"
+        }
+      })
+      .execPopulate();
     res.send(user.rooms);
   } catch (error) {
     res.status(400).send({ error: error.message });
