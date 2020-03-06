@@ -7,7 +7,14 @@ const roomSchema = new mongoose.Schema(
         type: mongoose.Types.ObjectId,
         ref: "User"
       }
-    ]
+    ],
+    type: {
+      type: String,
+      required: true
+    },
+    name: {
+      type: String
+    }
   },
   {
     timestamps: true

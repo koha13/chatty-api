@@ -20,7 +20,15 @@ router.post("/:idRoom", verifyToken, async (req, res) => {
       user: req.user._id,
       room: room._id
     });
-    await message.save();
+    await message.save(); // Save message
+    const io = req.app.get("socketio"); //Get io instance
+    let usersToEmit = room.users.filter(
+      user => String(user) !== String(req.user._id)
+    );
+    usersToEmit.map(user => {
+      io.in(user).emit("newMessage", message);
+    });
+
     res.send(message);
   } catch (error) {
     res.status(400).send({ error: error.message });
