@@ -33,15 +33,13 @@ router.post("/:idRoom", verifyToken, async (req, res) => {
 
     // Update read status
     for (let i = 0; i < usersToEmit.length; i++) {
-      User.findById(usersToEmit[i], async (err, user) => {
-        if (String(user.status) === "offline") {
-          await Info.updateOne(
-            { user: user._id, room: room._id },
-            {
-              read: false
-            }
-          );
-        }
+      await User.findById(usersToEmit[i], async (err, user) => {
+        await Info.updateOne(
+          { user: user._id, room: room._id },
+          {
+            read: false
+          }
+        );
       });
     }
 
@@ -76,7 +74,7 @@ router.get("/:idRoom", verifyToken, async (req, res) => {
       .execPopulate();
 
     // Update read status. Dont need to async
-    Info.updateOne(
+    await Info.updateOne(
       { user: req.user._id, room: room._id },
       {
         read: true

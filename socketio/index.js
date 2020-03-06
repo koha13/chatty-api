@@ -1,5 +1,6 @@
 const getUserFromToken = require("../middlewares/verifyToken").getUserFromToken;
 const User = require("../models/User");
+const Info = require("../models/Info");
 
 module.exports = function(io) {
   io.use(async (socket, next) => {
@@ -37,6 +38,16 @@ module.exports = function(io) {
       );
       //   Broadcast to all socket that user is offline
       socket.broadcast.emit("offlineUser", { user: socket.handshake.user });
+    });
+
+    // Online user unread message
+    socket.on("updateReadStatus", async data => {
+      await Info.updateOne(
+        { user: data.user, room: data.room },
+        {
+          read: true
+        }
+      );
     });
   });
 };
