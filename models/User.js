@@ -73,6 +73,12 @@ userSchema.virtual("rooms", {
   foreignField: "users"
 });
 
+userSchema.virtual("infos", {
+  ref: "Info",
+  localField: "_id",
+  foreignField: "user"
+});
+
 const User = mongoose.model("User", userSchema);
 
 module.exports = User;

@@ -1,6 +1,8 @@
 const router = require("express").Router();
 const Room = require("../models/Room");
+const User = require("../models/User");
 const Message = require("../models/Message");
+const Info = require("../models/Info");
 const verifyToken = require("../middlewares/verifyToken");
 
 // Add message to room
@@ -28,6 +30,20 @@ router.post("/:idRoom", verifyToken, async (req, res) => {
     usersToEmit.map(user => {
       io.in(user).emit("newMessage", message);
     });
+
+    // Update read status
+    for (let i = 0; i < usersToEmit.length; i++) {
+      User.findById(usersToEmit[i], async (err, user) => {
+        if (String(user.status) === "offline") {
+          await Info.updateOne(
+            { user: user._id, room: room._id },
+            {
+              read: false
+            }
+          );
+        }
+      });
+    }
 
     res.send(message);
   } catch (error) {
@@ -58,6 +74,14 @@ router.get("/:idRoom", verifyToken, async (req, res) => {
         }
       })
       .execPopulate();
+
+    // Update read status. Dont need to async
+    Info.updateOne(
+      { user: req.user._id, room: room._id },
+      {
+        read: true
+      }
+    );
     res.send(room.messages);
   } catch (error) {
     res.status(400).send({ error: error.message });
