@@ -97,7 +97,7 @@ router.post("/:idRoom/out", verifyToken, async (req, res) => {
   }
 });
 
-//Get info of rooms
+//Get info(a.k.a read status) of rooms
 router.get("/info", verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
@@ -107,6 +107,35 @@ router.get("/info", verifyToken, async (req, res) => {
       })
       .execPopulate();
     res.send(user.infos);
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
+
+// Create room
+router.post("/create", verifyToken, async (req, res) => {
+  try {
+    let { users, name } = req.body;
+    if (!users) throw new Error("No users in room");
+    if (users.length === 1) {
+      let existRoom1 = await Room.find({ users: [users[0], req.user._id] });
+      let existRoom2 = await Room.find({ users: [req.user._id, users[0]] });
+      if (!_.isEmpty(existRoom1) || !_.isEmpty(existRoom2))
+        throw new Error("Room already exist");
+    }
+    let type = users.length === 1 ? "private" : "group";
+    let newRoom = new Room({ users: [...users, req.user._id], type, name });
+    await newRoom.save();
+    await newRoom
+      .populate({
+        path: "users"
+      })
+      .execPopulate();
+    const io = req.app.get("socketio");
+    users.map(user => {
+      io.in(user).emit("newRoom", newRoom);
+    });
+    res.send(newRoom);
   } catch (error) {
     res.status(400).send({ error: error.message });
   }

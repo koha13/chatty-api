@@ -4,7 +4,7 @@ const verifyToken = require("../middlewares/verifyToken");
 
 // Get all user
 router.get("/", verifyToken, async (req, res) => {
-  users = await User.find();
+  users = await User.find({ _id: { $ne: req.user._id } });
   res.send(users);
 });
 
