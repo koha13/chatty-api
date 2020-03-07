@@ -131,11 +131,19 @@ router.post("/create", verifyToken, async (req, res) => {
         path: "users"
       })
       .execPopulate();
+
+    let arrInfo = users.map(user => ({ user, room: newRoom._id, read: false }));
+    arrInfo.push({ user: req.user._id, room: newRoom._id, read: true });
+    Info.insertMany(arrInfo);
     const io = req.app.get("socketio");
+    let newRoomModified = _.cloneDeep(newRoom);
+    newRoomModified.read = false;
     users.map(user => {
-      io.in(user).emit("newRoom", newRoom);
+      io.in(user).emit("newRoom", newRoomModified);
     });
-    res.send(newRoom);
+    let newRoomModified2 = _.cloneDeep(newRoom);
+    newRoomModified2.read = true;
+    res.send(newRoomModified2);
   } catch (error) {
     res.status(400).send({ error: error.message });
   }
