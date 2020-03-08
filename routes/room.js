@@ -24,14 +24,25 @@ router.get("/", verifyToken, async (req, res) => {
       .execPopulate();
 
     for (let i = 0; i < user.rooms.length; i++) {
-      let { type, createdAt, updatedAt, _id, users } = user.rooms[i];
+      let { type, createdAt, updatedAt, _id, users, name } = user.rooms[i];
       let info = false;
       for (let j = 0; j < user.infos.length; j++) {
         if (String(user.infos[j].room) === String(_id)) {
           info = user.infos[j].read;
         }
       }
-      user.rooms[i] = { type, createdAt, updatedAt, _id, users, read: info };
+      if (name) {
+        user.rooms[i] = {
+          type,
+          createdAt,
+          updatedAt,
+          _id,
+          users,
+          read: info,
+          name
+        };
+      } else
+        user.rooms[i] = { type, createdAt, updatedAt, _id, users, read: info };
     }
 
     res.send(user.rooms);
@@ -135,15 +146,23 @@ router.post("/create", verifyToken, async (req, res) => {
     let arrInfo = users.map(user => ({ user, room: newRoom._id, read: false }));
     arrInfo.push({ user: req.user._id, room: newRoom._id, read: true });
     Info.insertMany(arrInfo);
+    let dataRes = {
+      users: newRoom.users,
+      type: newRoom.type,
+      createdAt: newRoom.createdAt,
+      updatedAt: newRoom.updatedAt,
+      _id: newRoom._id,
+      read: false
+    };
+    if (newRoom.name) {
+      dataRes = { ...dataRes, name: newRoom.name };
+    }
     const io = req.app.get("socketio");
-    let newRoomModified = _.cloneDeep(newRoom);
-    newRoomModified.read = false;
     users.map(user => {
-      io.in(user).emit("newRoom", newRoomModified);
+      io.in(user).emit("newRoom", dataRes);
     });
-    let newRoomModified2 = _.cloneDeep(newRoom);
-    newRoomModified2.read = true;
-    res.send(newRoomModified2);
+
+    res.send(dataRes);
   } catch (error) {
     res.status(400).send({ error: error.message });
   }
