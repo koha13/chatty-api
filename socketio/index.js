@@ -40,7 +40,7 @@ module.exports = function(io) {
       socket.broadcast.emit("offlineUser", { user: socket.handshake.user });
     });
 
-    // Online user unread message
+    // Online user read message
     socket.on("updateReadStatus", async data => {
       await Info.updateOne(
         { user: data.user, room: data.room },

@@ -23,13 +23,10 @@ router.post("/:idRoom", verifyToken, async (req, res) => {
       room: room._id
     });
     await message.save(); // Save message
-    const io = req.app.get("socketio"); //Get io instance
+
     let usersToEmit = room.users.filter(
       user => String(user) !== String(req.user._id)
     );
-    usersToEmit.map(user => {
-      io.in(user).emit("newMessage", message);
-    });
 
     // Update read status
     for (let i = 0; i < usersToEmit.length; i++) {
@@ -42,6 +39,11 @@ router.post("/:idRoom", verifyToken, async (req, res) => {
         );
       });
     }
+
+    const io = req.app.get("socketio"); //Get io instance
+    usersToEmit.map(user => {
+      io.in(user).emit("newMessage", message);
+    });
 
     res.send(message);
   } catch (error) {
