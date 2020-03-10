@@ -22,6 +22,11 @@ const userSchema = new mongoose.Schema(
       maxlength: 32,
       required: true
     },
+    avatar: {
+      type: "String",
+      default:
+        "https://cdn0.iconfinder.com/data/icons/user-pictures/100/unknown_1-512.png"
+    },
     status: {
       type: String
     }

@@ -8,7 +8,8 @@ router.post("/register", async (req, res) => {
     name: req.body.name,
     email: req.body.email,
     password: req.body.password,
-    status: "offline"
+    status: "offline",
+    avatar: req.body.avatar
   });
 
   try {
