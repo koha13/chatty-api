@@ -55,31 +55,35 @@ router.get("/", verifyToken, async (req, res) => {
 router.post("/:idRoom/add", verifyToken, async (req, res) => {
   try {
     let idRoom = req.params.idRoom;
-    let idUserAdded = req.query._id;
-    if (idRoom === null || idUserAdded === null) {
+    let userlist = req.body.users;
+    if (idRoom === null || userlist === null) {
       return res.status(500).send({ error: "Bad request" });
     }
     const room = await Room.findById(idRoom);
     if (room === null) {
       return res.status(400).send({ error: "Can't find this room" });
-    }
+    } else if (room.type === "private")
+      return res.status(400).send({ error: "This room is private" });
     if (!room.users.includes(req.user._id)) {
       return res
         .status(401)
         .send({ error: "You're not in this room! Can't send this message" });
     }
-    let userAdded = await User.findById(idUserAdded);
-    if (userAdded === null) {
-      return res.status(400).send({ error: "Can't find this user" });
-    }
-    if (room.users.includes(userAdded._id)) {
-      return res.status(400).send({ error: "User already in this room" });
-    }
-    room.users.push(userAdded._id);
+
+    let infoList = [];
+    let usersAdded = [];
+
+    userlist.map(async user => {
+      let userAdded = await User.findById(user);
+      if (userAdded !== null && !room.users.includes(userAdded._id)) {
+        room.users.push(userAdded._id);
+        infoList.push({ user: userAdded._id, room: room._id, read: false });
+        usersAdded.push(userAdded);
+      }
+    });
     await room.save();
-    let info = new Info({ user: idUserAdded, room: room._id, read: false });
-    await info.save();
-    res.send(room);
+    await Info.insertMany(infoList);
+    res.send(usersAdded);
   } catch (error) {
     res.status(400).send({ error: error.message });
   }
@@ -136,13 +140,14 @@ router.post("/create", verifyToken, async (req, res) => {
     }
     let type = users.length === 1 ? "private" : "group";
     let newRoom = new Room({ users: [...users, req.user._id], type, name });
+
     await newRoom.save();
     await newRoom
       .populate({
         path: "users"
       })
       .execPopulate();
-
+    console.log(newRoom);
     let arrInfo = users.map(user => ({ user, room: newRoom._id, read: false }));
     arrInfo.push({ user: req.user._id, room: newRoom._id, read: true });
     Info.insertMany(arrInfo);
