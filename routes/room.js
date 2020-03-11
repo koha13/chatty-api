@@ -73,15 +73,17 @@ router.post("/:idRoom/add", verifyToken, async (req, res) => {
     let infoList = [];
     let usersAdded = [];
 
-    userlist.map(async user => {
-      let userAdded = await User.findById(user);
-      if (userAdded !== null && !room.users.includes(userAdded._id)) {
-        room.users.push(userAdded._id);
-        infoList.push({ user: userAdded._id, room: room._id, read: false });
-        usersAdded.push(userAdded);
-      }
-    });
-    await room.save();
+    for (let i = 0; i < userlist.length; i++) {
+      let userAdded = await User.findById(userlist[i]);
+      if (userAdded === null) continue;
+      if (room.users.includes(userAdded._id)) continue;
+      await Room.updateOne(
+        { _id: room._id },
+        { $push: { users: userAdded._id } }
+      );
+      infoList.push({ user: userAdded._id, room: room._id, read: false });
+      usersAdded = [...usersAdded, userAdded];
+    }
     await Info.insertMany(infoList);
     res.send(usersAdded);
   } catch (error) {
@@ -147,7 +149,6 @@ router.post("/create", verifyToken, async (req, res) => {
         path: "users"
       })
       .execPopulate();
-    console.log(newRoom);
     let arrInfo = users.map(user => ({ user, room: newRoom._id, read: false }));
     arrInfo.push({ user: req.user._id, room: newRoom._id, read: true });
     Info.insertMany(arrInfo);
