@@ -14,7 +14,8 @@ router.post("/register", async (req, res) => {
 
   try {
     const savedUser = await user.save();
-
+    const io = req.app.get("socketio");
+    io.emit("newUser", savedUser);
     res.send(savedUser);
   } catch (error) {
     res.status(400).send(error);

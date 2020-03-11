@@ -51,7 +51,7 @@ router.get("/", verifyToken, async (req, res) => {
   }
 });
 
-// Add user to a room
+// Add users to a room
 router.post("/:idRoom/add", verifyToken, async (req, res) => {
   try {
     let idRoom = req.params.idRoom;
@@ -85,6 +85,25 @@ router.post("/:idRoom/add", verifyToken, async (req, res) => {
       usersAdded = [...usersAdded, userAdded];
     }
     await Info.insertMany(infoList);
+    let roomTemp = await Room.findById(room._id);
+    await roomTemp.populate("users").execPopulate();
+    let { users, name, type, _id, createdAt, updatedAt } = roomTemp;
+    let roomSendToSK = {
+      users,
+      name,
+      type,
+      _id,
+      createdAt,
+      updatedAt,
+      read: "false"
+    };
+    const io = req.app.get("socketio"); //Get io instance
+    usersAdded.map(user => {
+      io.in(user._id).emit("newRoom", roomSendToSK);
+    });
+    room.users.map(user => {
+      io.in(user).emit("newUserInRoom", { users: usersAdded, room: room._id });
+    });
     res.send(usersAdded);
   } catch (error) {
     res.status(400).send({ error: error.message });
