@@ -7,6 +7,11 @@ const messageSchema = new mongoose.Schema(
       required: true,
       ref: "User"
     },
+    type: {
+      type: String,
+      default: "message",
+      required: true
+    },
     content: {
       type: String,
       required: true
