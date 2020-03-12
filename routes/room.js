@@ -51,6 +51,31 @@ router.get("/", verifyToken, async (req, res) => {
   }
 });
 
+// Get room by id
+router.get("/:idRoom", verifyToken, async (req, res) => {
+  try {
+    let room = await Room.findById(req.params.idRoom);
+    if (!room.users.includes(req.user._id))
+      throw new Error("You not in this room");
+    await room.populate("users").execPopulate();
+    if (room === null) throw new Error("Room is not exist");
+    let info = await Info.findOne({ room: room._id, user: req.user._id });
+    let { type, createdAt, updatedAt, _id, users, name } = room;
+    let roomRes = {
+      type,
+      createdAt,
+      updatedAt,
+      _id,
+      users,
+      name,
+      read: info.read
+    };
+    res.send(roomRes);
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+});
+
 // Add users to a room
 router.post("/:idRoom/add", verifyToken, async (req, res) => {
   try {

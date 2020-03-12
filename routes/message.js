@@ -29,16 +29,16 @@ router.post("/:idRoom", verifyToken, async (req, res) => {
     );
 
     // Update read status
-    for (let i = 0; i < usersToEmit.length; i++) {
-      await User.findById(usersToEmit[i], async (err, user) => {
-        await Info.updateOne(
-          { user: user._id, room: room._id },
-          {
-            read: false
-          }
-        );
-      });
-    }
+    // for (let i = 0; i < usersToEmit.length; i++) {
+    //   await User.findById(usersToEmit[i], async (err, user) => {
+    //     await Info.updateOne(
+    //       { user: user._id, room: room._id },
+    //       {
+    //         read: false
+    //       }
+    //     );
+    //   });
+    // }
 
     const io = req.app.get("socketio"); //Get io instance
     usersToEmit.map(user => {
