@@ -2,6 +2,7 @@ const router = require("express").Router();
 const verifyToken = require("../middlewares/verifyToken");
 const User = require("../models/User");
 const Room = require("../models/Room");
+const Message = require("../models/Message");
 const Info = require("../models/Info");
 const _ = require("lodash");
 //Get all room that current user already in
@@ -129,6 +130,13 @@ router.post("/:idRoom/add", verifyToken, async (req, res) => {
     room.users.map(user => {
       io.in(user).emit("newUserInRoom", { users: usersAdded, room: room._id });
     });
+
+    let contentMsgNoti = req.user.name + " added ";
+    for (let i = 0; i < usersAdded.length - 1; i++) {
+      contentMsgNoti += usersAdded[i].name + ", ";
+    }
+    contentMsgNoti += usersAdded[usersAdded.length - 1].name;
+    sendMessage(contentMsgNoti, req.user._id, idRoom, io);
     res.send(usersAdded);
   } catch (error) {
     res.status(400).send({ error: error.message });
@@ -211,11 +219,32 @@ router.post("/create", verifyToken, async (req, res) => {
     users.map(user => {
       io.in(user).emit("newRoom", dataRes);
     });
-
+    sendMessage(
+      req.user.name + " create this room",
+      req.user._id,
+      newRoom._id,
+      io
+    );
     res.send(dataRes);
   } catch (error) {
     res.status(400).send({ error: error.message });
   }
 });
+
+const sendMessage = async (content, userId, roomId, io) => {
+  let room = await Room.findById(roomId);
+  let message = new Message({
+    type: "noti",
+    content,
+    user: userId,
+    room: room._id
+  });
+  await message.save();
+  if (io) {
+    room.users.map(user => {
+      io.in(user).emit("newMessage", message);
+    });
+  }
+};
 
 module.exports = router;

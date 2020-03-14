@@ -40,6 +40,6 @@ require("./socketio")(io);
 
 app.set("socketio", io);
 
-server.listen(3000, () => {
+server.listen(3005, () => {
   console.log("Server is running");
 });
